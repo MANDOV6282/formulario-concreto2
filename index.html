@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Programación de Concreto</title>
+  <style>
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 4px; }
+    input, select { width: 100px; }
+  </style>
+</head>
+<body>
+  <h2>Programación Semanal de Concreto</h2>
+  <button onclick="agregarFila()">Agregar fila</button>
+  <button onclick="enviarDatos()">Enviar</button>
+  <br><br>
+  <table id="tabla">
+    <thead>
+      <tr>
+        <th>Día</th><th>Mes</th><th>Año</th><th>Hora</th><th>Elemento</th>
+        <th>Resistencia</th><th>Grava</th><th>Edad</th><th>Asentamiento</th>
+        <th>Adicional</th><th>Descarga</th><th>Cantidad</th><th>Ajuste</th><th>Frecuencia</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    function agregarFila() {
+      const tbody = document.getElementById("tabla").querySelector("tbody");
+      const fila = document.createElement("tr");
+      const campos = ["dia", "mes", "ano", "hora", "elemento", "resistencia", "grava", "edad", "asentamiento", "adicional", "descarga", "cantidad", "ajuste", "frecuencia"];
+      campos.forEach(c => {
+        const td = document.createElement("td");
+        const input = document.createElement("input");
+        input.name = c;
+        td.appendChild(input);
+        fila.appendChild(td);
+      });
+      tbody.appendChild(fila);
+    }
+
+    async function enviarDatos() {
+      const filas = document.querySelectorAll("#tabla tbody tr");
+      const datos = Array.from(filas).map(fila => {
+        const celdas = fila.querySelectorAll("input");
+        return {
+          dia: celdas[0].value,
+          mes: celdas[1].value,
+          ano: celdas[2].value,
+          hora: celdas[3].value,
+          elemento: celdas[4].value,
+          resistencia: celdas[5].value,
+          grava: celdas[6].value,
+          edad: celdas[7].value,
+          asentamiento: celdas[8].value,
+          adicional: celdas[9].value,
+          descarga: celdas[10].value,
+          cantidad: celdas[11].value,
+          ajuste: celdas[12].value,
+          frecuencia: celdas[13].value
+        };
+      });
+
+      const res = await fetch("/guardar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      });
+
+      const resultado = await res.json();
+      alert(resultado.message || resultado.error);
+    }
+  </script>
+</body>
+</html>
