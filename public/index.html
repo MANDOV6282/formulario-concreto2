@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <title>Programación de Concreto</title>
   <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
     table, th, td { border: 1px solid black; border-collapse: collapse; padding: 4px; }
     input, select { width: 100px; }
+    button { margin: 10px 5px; padding: 8px 12px; }
   </style>
 </head>
 <body>
@@ -61,7 +63,7 @@
         };
       });
 
-      const res = await fetch("/guardar", {
+      const res = await fetch("https://formulario-concreto2.onrender.com/guardar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos)
