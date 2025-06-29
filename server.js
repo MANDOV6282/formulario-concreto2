@@ -1,49 +1,54 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const ExcelJS = require("exceljs");
 const cors = require("cors");
 const fs = require("fs");
-const path = require("path");
-const app = express();
+const { google } = require("googleapis");
 
+const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname)));
 
-const FILE_NAME = "datos_concreto.xlsx";
+// Servir archivos estáticos desde la carpeta 'public'
+app.use(express.static("public"));
 
-if (!fs.existsSync(FILE_NAME)) {
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Programacion");
-  sheet.addRow([
-    "Día", "Mes", "Año", "Hora", "Elemento a Fundir", "Resistencia",
-    "Grava", "Edad", "Asentamiento", "Adicional", "Descarga",
-    "Cantidad", "Requiere ajuste", "Frecuencia llegada"
-  ]);
-  workbook.xlsx.writeFile(FILE_NAME);
+const CREDENTIALS_PATH = "./credenciales.json";
+const SHEET_ID = "19mYfGFkT6w5YBRQ-U275Pz8-dfmMfJawnoiSjgs9Nrw";
+
+// Autenticación con Google
+async function getAuthSheets() {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: CREDENTIALS_PATH,
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
+  const authClient = await auth.getClient();
+  const sheets = google.sheets({ version: "v4", auth: authClient });
+  return sheets;
 }
 
 app.post("/guardar", async (req, res) => {
   try {
     const datos = req.body;
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(FILE_NAME);
-    const sheet = workbook.getWorksheet("Programacion");
 
-    datos.forEach(row => {
-      sheet.addRow([
-        row.dia, row.mes, row.ano, row.hora, row.elemento,
-        row.resistencia, row.grava, row.edad, row.asentamiento,
-        row.adicional, row.descarga, row.cantidad,
-        row.ajuste, row.frecuencia
-      ]);
+    const sheets = await getAuthSheets();
+    const valores = datos.map(row => [
+      row.dia, row.mes, row.ano, row.hora, row.elemento,
+      row.resistencia, row.grava, row.edad, row.asentamiento,
+      row.adicional, row.descarga, row.cantidad,
+      row.ajuste, row.frecuencia
+    ]);
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "A2",
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      resource: { values: valores },
     });
 
-    await workbook.xlsx.writeFile(FILE_NAME);
-    res.status(200).send({ message: "Datos guardados correctamente." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: "Error al guardar los datos." });
+    res.status(200).send({ message: "Datos guardados en Google Sheets." });
+  } catch (error) {
+    console.error("Error al guardar:", error);
+    res.status(500).send({ error: "Error al guardar en Google Sheets." });
   }
 });
 
